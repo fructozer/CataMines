@@ -28,14 +28,16 @@ import java.util.logging.Logger;
 public class CuboidCataMine extends AbstractCataMine implements Cloneable, ConfigurationSerializable {
 
     private final Random random = new Random();
-
+    private static final List<ItemReceiver> receivers = new ArrayList<>();
     private File file;
     private YamlConfiguration fileConfig;
 
     public CuboidCataMine(String name, Region region) {
         super(name, region);
     }
-
+    public static void setReceivers(ItemReceiver receiver){
+        CuboidCataMine.receivers.add(receiver);
+    }
     public static CuboidCataMine deserialize(Map<String, Object> serializedCataMine) {
         Logger logger = CataMines.getInstance().getLogger();
 
@@ -260,8 +262,8 @@ public class CuboidCataMine extends AbstractCataMine implements Cloneable, Confi
         return mapSerializer;
     }
 
-    public void handleBlockBreak(BlockBreakEvent event) {
 
+    public void handleBlockBreak(BlockBreakEvent event) {
         if (getMinEfficiencyLvl() > 0 && !event.getPlayer().hasPermission("catamines.break")) {
             Player player = event.getPlayer();
             int efficiencyLvl = 0;
@@ -311,6 +313,9 @@ public class CuboidCataMine extends AbstractCataMine implements Cloneable, Confi
                     if (usedTool.containsEnchantment(Enchantment.LOOT_BONUS_BLOCKS)) {
                         item.setAmount(lootItem.getDropCount(usedTool.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS)));
                     }
+                }
+                for (ItemReceiver receiver : receivers) {
+                    if (receiver.addItem(event.getPlayer(), item)) return;
                 }
                 location.getWorld().dropItemNaturally(location, item);
             }
